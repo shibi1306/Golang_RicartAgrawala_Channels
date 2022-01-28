@@ -131,6 +131,11 @@ func (d Device) modifyResourceValue(resourceName string, newValue int, final_end
 }
 
 func main(){
+	if(n_devices > len(devices)){
+		fmt.Println("Error: need to initialize the devices greater than or equal to n_devices variable")
+		fmt.Println("Exiting...")
+		return
+	}
 	deviceC := devices["C"]
 	
 	deviceC.notInterestedInResource = true
