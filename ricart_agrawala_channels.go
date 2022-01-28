@@ -6,11 +6,12 @@ import (
 	"math/rand"
 )
 
-var resource string = "x"
+var resource string = "x"				// resource name for accessing later
 var resources map[string]int = map[string]int {"x": 4} // x is the resource with initial value 4
 // Number of devices.
 var n_devices int = 3
 
+// Initializing the devices
 var devices map[string]Device =  map[string]Device {
 	"A": Device{
 			processName: "A", 
@@ -63,18 +64,20 @@ func (d Device) notInterested(final_end chan string){
 			count += 1
 		}
 	}
-	if count != n_devices{
+	if count != n_devices{				// means that there are some devices that are interested in the resource.
 		for req := range d.req_chan{
 			devices[req.processName].res_chan <- Reply{processName: d.processName, message: "OK"}
 			count += 1
-			if count == n_devices{
+			if count == n_devices{		// breaking the loop when all the interested devices have sent requests.
 				break
 			}
 		}
 	}
+	// go routine for the device is completed
 	final_end <- d.processName
 }
 
+// When device is interested in making changes to the resource.
 func (d Device) modifyResourceValue(resourceName string, newValue int, final_end chan string){
 	timestamp := time.Now()
 	fmt.Println(d.processName, timestamp)
@@ -86,7 +89,7 @@ func (d Device) modifyResourceValue(resourceName string, newValue int, final_end
 			continue
 		}
 
-		if devices[i].notInterestedInResource{
+		if devices[i].notInterestedInResource{			// incrementing count since it wont receive requests from these devices
 			count += 1
 		}
 		fmt.Println(d.processName, "sending request to device", i)
@@ -104,7 +107,7 @@ func (d Device) modifyResourceValue(resourceName string, newValue int, final_end
 			}
 	
 			count += 1
-			if count == n_devices - 1{
+			if count == n_devices - 1{			// if the device has received info from all the devices.
 				break
 			}
 		}
@@ -114,40 +117,41 @@ func (d Device) modifyResourceValue(resourceName string, newValue int, final_end
 	for res := range d.res_chan {
 		fmt.Println(d.processName,"<-",res.processName, res.message)
 		count += 1
-		if count == n_devices - 1{
+		if count == n_devices - 1{				// interested or not, all the devices would send the OK message, will be stalled until then
 			break
 		}
 	}
 	// Critical section
 	resources[resourceName] = newValue	
+
 	fmt.Println(d.processName, "changed", resourceName, "to value:", newValue, "at time:", timestamp)
 	fmt.Println(d.processName, "has queued",d.queueCount, "requests")
-	// Sends OK message after altering all the values
 
+	// Sends OK message to queued devices after altering the resource
 	for i := 0; i < d.queueCount; i += 1{
-		devices[d.processQueue[i]].res_chan <- Reply{processName: d.processName, message: "OK"}
+		devices[d.processQueue[i]].res_chan <- Reply{processName: d.processName, message: "OK"}	
 	}
+	// go routine for the device is completed
 	final_end <- d.processName
 }
 
 func main(){
+	// base condition check
 	if(n_devices != len(devices)){
 		fmt.Println("Error: need to initialize the devices equal to n_devices variable")
 		fmt.Println("Exiting...")
 		return
 	}
-	deviceC := devices["C"]
-	
-	deviceC.notInterestedInResource = true
 
-
+	// channel to know if all go routines have executed
 	res := make(chan string)
+
 	for _, device := range devices{
 		if device.notInterestedInResource{
-			go device.notInterested(res)
+			go device.notInterested(res)			// when device is not interested in the 
 			continue
 		}
-		go device.modifyResourceValue(resource, rand.Intn(20), res)
+		go device.modifyResourceValue(resource, rand.Intn(20), res) // resource is key string for resources dictionary.
 	}
 	count := 0
 	for s := range res {
