@@ -1,4 +1,4 @@
-# GoLang_RicartAgrawala_Channels
+# Golang_RicartAgrawala_Channels
 ### Introduction
 This repository implements Ricart-Agrawala Mutual Exclusion Algorithm using channels and Goroutines in Go language.
 
